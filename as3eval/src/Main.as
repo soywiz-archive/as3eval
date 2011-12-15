@@ -37,7 +37,9 @@ package
 				trace('error! : ' + tokenizer.toString());
 			}
 			
-			trace(Evaluator.eval('(values[2] & 3) == 7', new EvaluationContext({ 'values' : ['a', 'b', 7] })));
+			trace(Evaluator.eval("1 ? 'true' : 'false'"));
+			trace(Evaluator.eval("0 ? 'true' : 'false' + ' for real'"));
+			trace(Evaluator.eval('(values[2][2 - 1] & 3) == 7', new EvaluationContext({ 'values' : ['a', 'b', [0, 7]] })));
 			trace(Evaluator.eval('1 * (1 + -2) - 4 + a + max(100, -10000) + values[2]', new EvaluationContext({ 'values' : [1,-9999999,3], 'a' : 999 }, { 'max' : Math.max } )));
 		}
 		

@@ -8,9 +8,9 @@ package es.cballesterosvelasco.eval.parser.nodes
 	 */
 	public class LiteralNode extends Node
 	{
-		protected var value:String;
+		protected var value:*;
 		
-		public function LiteralNode(value:String) 
+		public function LiteralNode(value:*) 
 		{
 			this.value = value;
 		}

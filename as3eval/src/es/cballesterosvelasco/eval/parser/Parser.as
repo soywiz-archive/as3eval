@@ -8,7 +8,9 @@ package es.cballesterosvelasco.eval.parser
 	import es.cballesterosvelasco.eval.parser.nodes.FunctionNode;
 	import es.cballesterosvelasco.eval.parser.nodes.IdentifierNode;
 	import es.cballesterosvelasco.eval.parser.nodes.Node;
-	import es.cballesterosvelasco.eval.parser.nodes.NumericNode;
+	import es.cballesterosvelasco.eval.parser.nodes.NumericLiteralNode;
+	import es.cballesterosvelasco.eval.parser.nodes.StringLiteralNode;
+	import es.cballesterosvelasco.eval.parser.nodes.TernaryOperatorNode;
 	import es.cballesterosvelasco.eval.parser.nodes.UnaryOperatorNode;
 	import es.cballesterosvelasco.eval.parser.nodes.VariableNode;
 	/**
@@ -26,6 +28,26 @@ package es.cballesterosvelasco.eval.parser
 		
 		public function parse():Node {
 			return parseExpression();
+		}
+		
+		public function parseIdentifier():Node {
+			var currentNode:Token = tokenizer.current;
+			
+			// Identifier.
+			// ID
+			if (currentNode.type == 'id') {
+				tokenizer.next();
+				return new IdentifierNode(currentNode.value);
+			}
+			
+			/*
+			if (currentNode.type == 'number') {
+				tokenizer.next();
+				return new NumericNode(currentNode.value);
+			}
+			*/
+			
+			throw(new Error("Not an identifier : " + currentNode));
 		}
 		
 		public function parseLiteralUnary():Node {
@@ -47,9 +69,15 @@ package es.cballesterosvelasco.eval.parser
 			// Numeric literal.
 			if (currentNode.type == 'number') {
 				tokenizer.next();
-				return new NumericNode(currentNode.value);
+				return new NumericLiteralNode(currentNode.value);
 			}
-			
+
+			// String literal.
+			if (currentNode.type == 'string') {
+				tokenizer.next();
+				return new StringLiteralNode(currentNode.value);
+			}
+
 			// Function call.
 			// ID '(' call_arguments ')'
 			if (currentNode.type == 'id') {
@@ -60,56 +88,65 @@ package es.cballesterosvelasco.eval.parser
 				var leftNode:Node = null;
 				
 				var currentType:String = '';
-				if (tokenizer.current.valueIsAnyOf('(', '[')) {
+				if (tokenizer.current.valueIsAnyOf('(', '[', '.')) {
 					switch (tokenizer.current.value) {
 						case '(':
 							leftNode = new FunctionNode(currentNode.value);
 							break;
 						case '[':
+						case '.':
 							leftNode = new IdentifierNode(currentNode.value);
 							break;
 						default:
 							throw(new Error("Unexpected!"));
 					}
 					
-					currentType = tokenizer.current.value;
-					//throw(new Error("Not implemented function call"));
-					var callArguments:Vector.<Node> = new Vector.<Node>();
+					while (tokenizer.current.valueIsAnyOf('(', '[', '.')) {
+						currentType = tokenizer.current.value;
+						//throw(new Error("Not implemented function call"));
+						var callArguments:Vector.<Node> = new Vector.<Node>();
 
-					tokenizer.next();
-					while (true) {
-						//trace(tokenizer.current);
-						var callArgument:Node = parseExpression();
-						callArguments.push(callArgument);
+						tokenizer.next();
+						while (true) {
+							if (currentType == '.') {
+								callArguments.push(parseIdentifier());
+								//tokenizer.next();
+								break;
+							}
+							
+							//trace(tokenizer.current);
+							var callArgument:Node = parseExpression();
+							callArguments.push(callArgument);
+							
+							if (currentType == '(') {
+								if (tokenizer.current.value == ')') {
+									tokenizer.next();
+									break;
+								}
+
+								if (tokenizer.current.value == ',') {
+									tokenizer.next();
+									continue;
+								}
+							} else if (currentType == '[') {
+								if (tokenizer.current.value == ']') {
+									tokenizer.next();
+									break;
+								}
+							} else {
+								throw(new Error("Unexpected currentType! : " + currentType));
+							}
+
+							throw(new Error("Invalid function call. " + tokenizer.current + ' not expected.'));
+						}
 						
 						if (currentType == '(') {
-							if (tokenizer.current.value == ')') {
-								tokenizer.next();
-								break;
-							}
-
-							if (tokenizer.current.value == ',') {
-								tokenizer.next();
-								continue;
-							}
-						} else if (currentType == '[') {
-							if (tokenizer.current.value == ']') {
-								tokenizer.next();
-								break;
-							}
+							leftNode = new FunctionCallNode(leftNode, callArguments);
+						} else if (currentType == '[' || currentType == '.') {
+							leftNode = new ArrayAccessNode(leftNode, callArguments[0]);
 						} else {
 							throw(new Error("Unexpected!"));
 						}
-
-						throw(new Error("Invalid function call. " + tokenizer.current + ' not expected.'));
-					}
-					
-					if (currentType == '(') {
-						leftNode = new FunctionCallNode(leftNode, callArguments);
-					} else if (currentType == '[') {
-						leftNode = new ArrayAccessNode(leftNode, callArguments[0]);
-					} else {
-						throw(new Error("Unexpected!"));
 					}
 				}
 				
@@ -133,8 +170,21 @@ package es.cballesterosvelasco.eval.parser
 			throw(new Error("Invalid token on parseLiteralUnary : " + currentNode));
 		}
 
+		public function parseTernary():Node {
+			var left:Node = parseLiteralUnary();
+			if (tokenizer.current.value == '?') {
+				tokenizer.next();
+				var middle:Node = parseExpression();
+				tokenizer.expectAndMoveNext(':');
+				var right:Node = parseExpression();
+				
+				left = new TernaryOperatorNode(left, middle, right);
+			}
+			return left;
+		}
+
 		public function parseLogicOr():Node {
-			return parseBinary('parseLogicOr', parseLiteralUnary, '||');
+			return parseBinary('parseLogicOr', parseTernary, '||');
 		}
 
 		public function parseLogicAnd():Node {

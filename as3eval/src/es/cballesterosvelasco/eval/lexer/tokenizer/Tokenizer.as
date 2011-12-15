@@ -69,6 +69,8 @@ package es.cballesterosvelasco.eval.lexer.tokenizer
 				addOperators('(', ')');
 				
 				addOperators('[', ']');
+				
+				addOperators('?', ':');
 
 				addOperators('.', ',');
 			}
@@ -120,7 +122,18 @@ package es.cballesterosvelasco.eval.lexer.tokenizer
 				
 				// A string.
 				if (string.charAt(n) == '"' || string.charAt(n) == "'") {
-					throw(new Error('Strings not implemented'));
+					var openChar:String = string.charAt(n);
+					m = n++;
+					while (n < string.length) {
+						if (string.charAt(n) == openChar) break;
+						if (string.charAt(n) == '\\') {
+							n++;
+						}
+						n++;
+					}
+					n++;
+					emitToken(string.substr(m, n - m), 'string');
+					continue;
 				}
 				
 				throw(new Error("Invalid character '" + string.charAt(n) + "'!"));
