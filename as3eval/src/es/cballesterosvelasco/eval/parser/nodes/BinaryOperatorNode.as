@@ -33,6 +33,14 @@ package es.cballesterosvelasco.eval.parser.nodes
 				case '^': return leftValue ^ rightValue;
 				case '&&': return leftValue && rightValue;
 				case '||': return leftValue || rightValue;
+				case '===': return leftValue === rightValue;
+				case '!==': return leftValue !== rightValue;
+				case '==': return leftValue == rightValue;
+				case '!=': return leftValue != rightValue;
+				case '>=': return leftValue >= rightValue;
+				case '<=': return leftValue <= rightValue;
+				case '>': return leftValue > rightValue;
+				case '<': return leftValue < rightValue;
 				default: throw(new Error("Can't evaluate binary operator '" + operator + "'"));
 			}
 		}

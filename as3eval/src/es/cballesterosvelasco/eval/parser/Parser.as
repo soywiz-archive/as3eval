@@ -27,7 +27,9 @@ package es.cballesterosvelasco.eval.parser
 		}
 		
 		public function parse():Node {
-			return parseExpression();
+			var node:Node = parseExpression();
+			if (tokenizer.current.type != 'eof') throw(new Error("Expression not completed"));
+			return node;
 		}
 		
 		public function parseIdentifier():Node {
@@ -203,8 +205,12 @@ package es.cballesterosvelasco.eval.parser
 			return parseBinary('parseBitAnd', parseBitXor, '&');
 		}
 
+		public function parseCompare():Node {
+			return parseBinary('parseCompare', parseBitAnd, '==', '!=', '>=', '<=', '>', '<', '===', '!==');
+		}
+
 		public function parseAddSub():Node {
-			return parseBinary('parseAddSub', parseBitAnd, '+', '-');
+			return parseBinary('parseAddSub', parseCompare, '+', '-');
 		}
 		
 		public function parseMulDiv():Node {

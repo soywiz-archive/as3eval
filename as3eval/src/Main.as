@@ -30,17 +30,25 @@ package
 			}, 10);
 		}
 		
-		private function main():void {
-			var tokenizer:Tokenizer = new Tokenizer('12+(34+56)');
-			
-			if (tokenizer.toString() != 'Token("12":number),Token("+":operator),Token("(":operator),Token("34":number),Token("+":operator),Token("56":number),Token(")":operator),Token("":eof)') {
-				trace('error! : ' + tokenizer.toString());
+		private function checkEquals(expected:*, real:*):void {
+			if (expected !== real) {
+				trace('Unexpected result :: ' + expected + ' != ' + real);
 			}
+		}
+		
+		private function main():void {
+			checkEquals(
+				'Token("12":number),Token("+":operator),Token("(":operator),Token("34":number),Token("+":operator),Token("56":number),Token(")":operator),Token("":eof)',
+				new Tokenizer('12+(34+56)').toString()
+			);
 			
-			trace(Evaluator.eval("1 ? 'true' : 'false'"));
-			trace(Evaluator.eval("0 ? 'true' : 'false' + ' for real'"));
-			trace(Evaluator.eval('(values[2][2 - 1] & 3) == 7', new EvaluationContext({ 'values' : ['a', 'b', [0, 7]] })));
-			trace(Evaluator.eval('1 * (1 + -2) - 4 + a + max(100, -10000) + values[2]', new EvaluationContext({ 'values' : [1,-9999999,3], 'a' : 999 }, { 'max' : Math.max } )));
+			checkEquals('true', Evaluator.eval("1 ? 'true' : 'false'"));
+			checkEquals('false for real', Evaluator.eval("0 ? 'true' : 'false' + ' for real'"));
+			checkEquals(true, Evaluator.eval('(6 + 1) == 7'));
+			checkEquals(false, Evaluator.eval('(values[2][2 - 1] & 3) == max(3, 7)', new EvaluationContext({ 'values' : ['a', 'b', [0, 7]] })));
+			checkEquals(1097, Evaluator.eval('1 * (1 + -2) - 4 + a + max(100, -10000) + values[2]', new EvaluationContext( { 'values' : [1, -9999999, 3], 'a' : 999 }, { 'max' : Math.max } )));
+			checkEquals(true, Evaluator.eval('-2 < -1'));
+			checkEquals(false, Evaluator.eval('2 > 2'));
 		}
 		
 	}

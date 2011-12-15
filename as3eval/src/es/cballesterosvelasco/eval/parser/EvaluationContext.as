@@ -1,5 +1,6 @@
 package es.cballesterosvelasco.eval.parser 
 {
+	import flash.utils.describeType;
 	/**
 	 * ...
 	 * @author Carlos Ballesteros Velasco
@@ -11,7 +12,13 @@ package es.cballesterosvelasco.eval.parser
 		
 		public function EvaluationContext(variables:Object = null, functions:Object = null) {
 			if (variables == null) variables = { };
-			if (functions == null) functions = { };
+			if (functions == null) {
+				functions = { };
+				var methods:* = describeType(EvaluationDefaultFunctions).method;
+				for each (var method:* in methods) {
+					functions[method.@name] = EvaluationDefaultFunctions[method.@name];
+				}
+			}
 			this.variables = variables;
 			this.functions = functions;
 		}
